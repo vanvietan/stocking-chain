@@ -3,14 +3,14 @@ package models
 import "time"
 
 type StockData struct {
-	Symbol    string    `json:"symbol"`
-	Date      time.Time `json:"date"`
-	Open      float64   `json:"open"`
-	High      float64   `json:"high"`
-	Low       float64   `json:"low"`
-	Close     float64   `json:"close"`
-	Volume    int64     `json:"volume"`
-	AdjClose  float64   `json:"adj_close"`
+	Symbol   string    `json:"symbol"`
+	Date     time.Time `json:"date"`
+	Open     float64   `json:"open"`
+	High     float64   `json:"high"`
+	Low      float64   `json:"low"`
+	Close    float64   `json:"close"`
+	Volume   int64     `json:"volume"`
+	AdjClose float64   `json:"adj_close"`
 }
 
 type TechnicalIndicators struct {
@@ -34,32 +34,38 @@ type CandlestickPattern struct {
 	Confidence float64 `json:"confidence"`
 }
 
+type TimeframePatterns struct {
+	Daily   []CandlestickPattern `json:"daily"`
+	Weekly  []CandlestickPattern `json:"weekly"`
+	Monthly []CandlestickPattern `json:"monthly"`
+}
+
 type SupportResistance struct {
 	SupportLevels    []float64 `json:"support_levels"`
 	ResistanceLevels []float64 `json:"resistance_levels"`
 }
 
 type TrendAnalysis struct {
-	Trend      string  `json:"trend"` // "uptrend", "downtrend", "sideways"
-	Strength   float64 `json:"strength"`
-	TrendLine  float64 `json:"trend_line"`
+	Trend     string  `json:"trend"` // "uptrend", "downtrend", "sideways"
+	Strength  float64 `json:"strength"`
+	TrendLine float64 `json:"trend_line"`
 }
 
 type AnalysisReport struct {
-	Symbol              string                `json:"symbol"`
-	CompanyName         string                `json:"company_name"`
-	Date                time.Time             `json:"date"`
-	CurrentPrice        float64               `json:"current_price"`
-	Indicators          TechnicalIndicators   `json:"indicators"`
-	Patterns            []CandlestickPattern  `json:"patterns"`
-	SupportResistance   SupportResistance     `json:"support_resistance"`
-	Trend               TrendAnalysis         `json:"trend"`
-	BuyRange            PriceRange            `json:"buy_range"`
-	HalfBuyRange        PriceRange            `json:"half_buy_range"`
-	SellRange           PriceRange            `json:"sell_range"`
-	Recommendation      string                `json:"recommendation"` // "buy", "sell", "hold"
-	RecommendationScore float64               `json:"recommendation_score"`
-	PriceHistory        []StockData           `json:"price_history"`
+	Symbol              string              `json:"symbol"`
+	CompanyName         string              `json:"company_name"`
+	Date                time.Time           `json:"date"`
+	CurrentPrice        float64             `json:"current_price"`
+	Indicators          TechnicalIndicators `json:"indicators"`
+	Patterns            TimeframePatterns   `json:"patterns"`
+	SupportResistance   SupportResistance   `json:"support_resistance"`
+	Trend               TrendAnalysis       `json:"trend"`
+	BuyRange            PriceRange          `json:"buy_range"`
+	HalfBuyRange        PriceRange          `json:"half_buy_range"`
+	SellRange           PriceRange          `json:"sell_range"`
+	Recommendation      string              `json:"recommendation"` // "buy", "sell", "hold"
+	RecommendationScore float64             `json:"recommendation_score"`
+	PriceHistory        []StockData         `json:"price_history"`
 }
 
 type PriceRange struct {

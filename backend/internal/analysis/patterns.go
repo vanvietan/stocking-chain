@@ -780,3 +780,142 @@ func DetectCandlestickPatterns(data []models.StockData) []models.CandlestickPatt
 
 	return patterns
 }
+
+// ============================================================================
+// CANDLE AGGREGATION FUNCTIONS
+// ============================================================================
+
+// aggregateToWeeklyCandles converts daily candles to weekly candles
+// Each weekly candle represents Monday-Friday of that week
+func aggregateToWeeklyCandles(data []models.StockData) []models.StockData {
+	if len(data) == 0 {
+		return []models.StockData{}
+	}
+
+	var weeklyCandles []models.StockData
+	var currentWeek []models.StockData
+
+	for i, candle := range data {
+		year, week := candle.Date.ISOWeek()
+
+		if i == 0 {
+			currentWeek = append(currentWeek, candle)
+			continue
+		}
+
+		prevYear, prevWeek := data[i-1].Date.ISOWeek()
+
+		if year == prevYear && week == prevWeek {
+			currentWeek = append(currentWeek, candle)
+		} else {
+			// Aggregate previous week
+			if len(currentWeek) > 0 {
+				weeklyCandles = append(weeklyCandles, aggregateCandles(currentWeek))
+			}
+			currentWeek = []models.StockData{candle}
+		}
+	}
+
+	// Don't forget the last week
+	if len(currentWeek) > 0 {
+		weeklyCandles = append(weeklyCandles, aggregateCandles(currentWeek))
+	}
+
+	return weeklyCandles
+}
+
+// aggregateToMonthlyCandles converts daily candles to monthly candles
+func aggregateToMonthlyCandles(data []models.StockData) []models.StockData {
+	if len(data) == 0 {
+		return []models.StockData{}
+	}
+
+	var monthlyCandles []models.StockData
+	var currentMonth []models.StockData
+
+	for i, candle := range data {
+		if i == 0 {
+			currentMonth = append(currentMonth, candle)
+			continue
+		}
+
+		prevCandle := data[i-1]
+		sameMonth := candle.Date.Year() == prevCandle.Date.Year() &&
+			candle.Date.Month() == prevCandle.Date.Month()
+
+		if sameMonth {
+			currentMonth = append(currentMonth, candle)
+		} else {
+			// Aggregate previous month
+			if len(currentMonth) > 0 {
+				monthlyCandles = append(monthlyCandles, aggregateCandles(currentMonth))
+			}
+			currentMonth = []models.StockData{candle}
+		}
+	}
+
+	// Don't forget the last month
+	if len(currentMonth) > 0 {
+		monthlyCandles = append(monthlyCandles, aggregateCandles(currentMonth))
+	}
+
+	return monthlyCandles
+}
+
+// aggregateCandles combines multiple candles into a single OHLCV candle
+func aggregateCandles(candles []models.StockData) models.StockData {
+	if len(candles) == 0 {
+		return models.StockData{}
+	}
+
+	first := candles[0]
+	last := candles[len(candles)-1]
+
+	aggregated := models.StockData{
+		Symbol:   first.Symbol,
+		Date:     last.Date, // Use the last date in the period
+		Open:     first.Open,
+		High:     first.High,
+		Low:      first.Low,
+		Close:    last.Close,
+		Volume:   0,
+		AdjClose: last.AdjClose,
+	}
+
+	// Find the highest high and lowest low, sum volumes
+	for _, c := range candles {
+		if c.High > aggregated.High {
+			aggregated.High = c.High
+		}
+		if c.Low < aggregated.Low {
+			aggregated.Low = c.Low
+		}
+		aggregated.Volume += c.Volume
+	}
+
+	return aggregated
+}
+
+// ============================================================================
+// MULTI-TIMEFRAME PATTERN DETECTION
+// ============================================================================
+
+// DetectAllTimeframePatterns detects candlestick patterns for daily, weekly, and monthly timeframes
+func DetectAllTimeframePatterns(data []models.StockData) models.TimeframePatterns {
+	// Detect patterns on daily candles
+	dailyPatterns := DetectCandlestickPatterns(data)
+
+	// Aggregate to weekly and detect patterns
+	weeklyData := aggregateToWeeklyCandles(data)
+	weeklyPatterns := DetectCandlestickPatterns(weeklyData)
+
+	// Aggregate to monthly and detect patterns
+	monthlyData := aggregateToMonthlyCandles(data)
+	monthlyPatterns := DetectCandlestickPatterns(monthlyData)
+
+	return models.TimeframePatterns{
+		Daily:   dailyPatterns,
+		Weekly:  weeklyPatterns,
+		Monthly: monthlyPatterns,
+	}
+}
