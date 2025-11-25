@@ -135,6 +135,31 @@ export default function AnalysisReport({ report }: AnalysisReportProps) {
             </div>
           </div>
         </div>
+
+        {/* Wyckoff Analysis Link */}
+        {report.wyckoff && report.wyckoff.phase !== 'insufficient_data' && (
+          <div className="border-t pt-6 mt-6">
+            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-6 rounded-lg border border-indigo-200 dark:border-indigo-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-indigo-900 dark:text-indigo-300 mb-2">
+                    Advanced Wyckoff Method Analysis
+                  </h3>
+                  <p className="text-sm text-indigo-700 dark:text-indigo-400">
+                    Explore smart money activity with comprehensive Wyckoff analysis including phase detection,
+                    event timeline, trading range, and effort vs result charts.
+                  </p>
+                </div>
+                <a
+                  href={`/wyckoff?symbol=${report.symbol}`}
+                  className="ml-4 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors shadow-lg hover:shadow-xl whitespace-nowrap"
+                >
+                  View Wyckoff Analysis →
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -60,6 +60,7 @@ type AnalysisReport struct {
 	Patterns            TimeframePatterns   `json:"patterns"`
 	SupportResistance   SupportResistance   `json:"support_resistance"`
 	Trend               TrendAnalysis       `json:"trend"`
+	Wyckoff             WyckoffAnalysis     `json:"wyckoff"`
 	BuyRange            PriceRange          `json:"buy_range"`
 	HalfBuyRange        PriceRange          `json:"half_buy_range"`
 	SellRange           PriceRange          `json:"sell_range"`
@@ -71,4 +72,31 @@ type AnalysisReport struct {
 type PriceRange struct {
 	Min float64 `json:"min"`
 	Max float64 `json:"max"`
+}
+
+// WyckoffEvent represents a key Wyckoff structural event
+type WyckoffEvent struct {
+	Name       string    `json:"name"`       // "Spring", "Upthrust", "Selling Climax", etc.
+	Type       string    `json:"type"`       // "accumulation", "distribution"
+	Date       time.Time `json:"date"`
+	Price      float64   `json:"price"`
+	Volume     int64     `json:"volume"`
+	Confidence float64   `json:"confidence"`
+}
+
+// WyckoffAnalysis contains the complete Wyckoff method analysis
+type WyckoffAnalysis struct {
+	Phase           string         `json:"phase"`            // "accumulation", "distribution", "markup", "markdown"
+	PhaseConfidence float64        `json:"phase_confidence"`
+	Events          []WyckoffEvent `json:"events"`
+	TradingRange    PriceRange     `json:"trading_range"`
+	EffortResult    string         `json:"effort_result"` // "confirming", "diverging"
+
+	// Wyckoff-specific recommendation and trading zones
+	Recommendation      string     `json:"recommendation"`       // "buy", "sell", "hold"
+	RecommendationScore float64    `json:"recommendation_score"` // -1 to 1
+	BuyZone             PriceRange `json:"buy_zone"`             // Aggressive entry zone (bottom 15% of range)
+	AccumulationZone    PriceRange `json:"accumulation_zone"`    // Moderate entry zone (15-35% of range)
+	DistributionZone    PriceRange `json:"distribution_zone"`    // Take profit zone (65-85% of range)
+	SellZone            PriceRange `json:"sell_zone"`            // Exit/short zone (top 15% of range)
 }
