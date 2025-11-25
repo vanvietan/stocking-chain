@@ -66,6 +66,31 @@ type YahooError struct {
 	Description string `json:"description"`
 }
 
+// StockInfo contains company metadata
+type StockInfo struct {
+	Symbol    string `json:"symbol"`
+	ShortName string `json:"short_name"`
+	LongName  string `json:"long_name"`
+	Exchange  string `json:"exchange"`
+	Currency  string `json:"currency"`
+}
+
+// Yahoo Finance Search API response structures
+type YahooSearchResponse struct {
+	Quotes []YahooSearchQuote `json:"quotes"`
+	Count  int                `json:"count"`
+}
+
+type YahooSearchQuote struct {
+	Symbol       string `json:"symbol"`
+	ShortName    string `json:"shortname"`
+	LongName     string `json:"longname"`
+	Exchange     string `json:"exchange"`
+	ExchangeDisp string `json:"exchDisp"`
+	Sector       string `json:"sector"`
+	Industry     string `json:"industry"`
+}
+
 // NewClient creates a new Yahoo Finance API client
 // The apiKey parameter is kept for backward compatibility but is not used
 func NewClient(apiKey string) *Client {
@@ -202,4 +227,70 @@ func (c *Client) GetLatestPrice(symbol string) (*models.StockData, error) {
 
 	// Return the most recent data point
 	return &data[len(data)-1], nil
+}
+
+// GetStockInfo fetches company metadata including name from Yahoo Finance using search API
+func (c *Client) GetStockInfo(symbol string) (*StockInfo, error) {
+	yahooSymbol := formatSymbol(symbol)
+
+	// Use search API which is publicly accessible
+	url := fmt.Sprintf("%s/v1/finance/search?q=%s&quotesCount=1&newsCount=0",
+		YAHOO_BASE_URL,
+		yahooSymbol,
+	)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Set headers to mimic a browser request
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+	req.Header.Set("Accept", "*/*")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch stock info: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var searchResp YahooSearchResponse
+	if err := json.Unmarshal(body, &searchResp); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	if len(searchResp.Quotes) == 0 {
+		return nil, fmt.Errorf("no info found for symbol %s", symbol)
+	}
+
+	// Find exact match for our symbol
+	var result *YahooSearchQuote
+	for i := range searchResp.Quotes {
+		if searchResp.Quotes[i].Symbol == yahooSymbol {
+			result = &searchResp.Quotes[i]
+			break
+		}
+	}
+
+	// If no exact match, use first result
+	if result == nil {
+		result = &searchResp.Quotes[0]
+	}
+
+	return &StockInfo{
+		Symbol:    symbol, // Keep original symbol without .VN suffix
+		ShortName: result.ShortName,
+		LongName:  result.LongName,
+		Exchange:  result.ExchangeDisp,
+		Currency:  "", // Search API doesn't return currency
+	}, nil
 }

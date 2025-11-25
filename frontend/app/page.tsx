@@ -19,7 +19,7 @@ export default function Home() {
     try {
       const response = await axios.post('http://localhost:8080/api/analyze', {
         symbol: symbol.toUpperCase(),
-        days_back: 200,
+        days_back: 365,
       });
 
       setReport(response.data);

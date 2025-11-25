@@ -47,6 +47,7 @@ type TrendAnalysis struct {
 
 type AnalysisReport struct {
 	Symbol              string                `json:"symbol"`
+	CompanyName         string                `json:"company_name"`
 	Date                time.Time             `json:"date"`
 	CurrentPrice        float64               `json:"current_price"`
 	Indicators          TechnicalIndicators   `json:"indicators"`
@@ -58,6 +59,7 @@ type AnalysisReport struct {
 	SellRange           PriceRange            `json:"sell_range"`
 	Recommendation      string                `json:"recommendation"` // "buy", "sell", "hold"
 	RecommendationScore float64               `json:"recommendation_score"`
+	PriceHistory        []StockData           `json:"price_history"`
 }
 
 type PriceRange struct {

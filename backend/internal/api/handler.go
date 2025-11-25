@@ -78,6 +78,24 @@ func (h *Handler) AnalyzeStock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Fetch company info (non-blocking - continue even if it fails)
+	stockInfo, err := h.ssiClient.GetStockInfo(req.Symbol)
+	if err != nil {
+		log.Printf("Warning: Could not fetch company info for %s: %v", req.Symbol, err)
+		// Use symbol as fallback for company name
+		report.CompanyName = req.Symbol
+	} else {
+		log.Printf("Stock info for %s: LongName='%s', ShortName='%s'", req.Symbol, stockInfo.LongName, stockInfo.ShortName)
+		// Prefer long name, fall back to short name, then symbol
+		if stockInfo.LongName != "" {
+			report.CompanyName = stockInfo.LongName
+		} else if stockInfo.ShortName != "" {
+			report.CompanyName = stockInfo.ShortName
+		} else {
+			report.CompanyName = req.Symbol
+		}
+	}
+
 	respondWithJSON(w, http.StatusOK, report)
 }
 
