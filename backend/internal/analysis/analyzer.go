@@ -21,7 +21,7 @@ func (a *Analyzer) Analyze(symbol string, data []models.StockData) (*models.Anal
 	currentPrice := currentData.Close
 
 	indicators := CalculateTechnicalIndicators(data)
-	patterns := DetectCandlestickPatterns(data)
+	patterns := DetectAllTimeframePatterns(data)
 	supportResistance := DetectSupportResistance(data)
 	trend := AnalyzeTrend(data)
 
@@ -60,7 +60,7 @@ func (a *Analyzer) Analyze(symbol string, data []models.StockData) (*models.Anal
 func (a *Analyzer) generateRecommendation(
 	currentPrice float64,
 	indicators models.TechnicalIndicators,
-	patterns []models.CandlestickPattern,
+	patterns models.TimeframePatterns,
 	sr models.SupportResistance,
 	trend models.TrendAnalysis,
 ) (string, float64) {
@@ -94,7 +94,8 @@ func (a *Analyzer) generateRecommendation(
 		score -= 1.0
 	}
 
-	for _, pattern := range patterns {
+	// Use daily patterns for recommendation scoring
+	for _, pattern := range patterns.Daily {
 		if pattern.Type == "bullish" {
 			score += pattern.Confidence
 		} else if pattern.Type == "bearish" {

@@ -30,6 +30,12 @@ export interface CandlestickPattern {
   confidence: number;
 }
 
+export interface TimeframePatterns {
+  daily: CandlestickPattern[];
+  weekly: CandlestickPattern[];
+  monthly: CandlestickPattern[];
+}
+
 export interface SupportResistance {
   support_levels: number[];
   resistance_levels: number[];
@@ -52,7 +58,7 @@ export interface AnalysisReport {
   date: string;
   current_price: number;
   indicators: TechnicalIndicators;
-  patterns: CandlestickPattern[];
+  patterns: TimeframePatterns;
   support_resistance: SupportResistance;
   trend: TrendAnalysis;
   buy_range: PriceRange;

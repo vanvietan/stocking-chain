@@ -1,13 +1,33 @@
 'use client';
 
-import { AnalysisReport as ReportType } from '@/types';
+import { useState } from 'react';
+import { AnalysisReport as ReportType, CandlestickPattern } from '@/types';
 import StockChart from './StockChart';
+
+type Timeframe = 'daily' | 'weekly' | 'monthly';
 
 interface AnalysisReportProps {
   report: ReportType;
 }
 
 export default function AnalysisReport({ report }: AnalysisReportProps) {
+  const [selectedTimeframe, setSelectedTimeframe] = useState<Timeframe>('daily');
+
+  const getTimeframeLabel = (tf: Timeframe) => {
+    switch (tf) {
+      case 'daily':
+        return 'Today';
+      case 'weekly':
+        return 'Week';
+      case 'monthly':
+        return 'Month';
+    }
+  };
+
+  const getCurrentPatterns = (): CandlestickPattern[] => {
+    return report.patterns[selectedTimeframe] || [];
+  };
+
   const getRecommendationColor = (recommendation: string) => {
     switch (recommendation) {
       case 'buy':
@@ -147,10 +167,21 @@ export default function AnalysisReport({ report }: AnalysisReportProps) {
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6">
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Candlestick Patterns</h3>
-          {report.patterns.length > 0 ? (
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-semibold text-gray-800 dark:text-white">Candlestick Patterns</h3>
+            <select
+              value={selectedTimeframe}
+              onChange={(e) => setSelectedTimeframe(e.target.value as Timeframe)}
+              className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
+            >
+              <option value="daily">Today</option>
+              <option value="weekly">Week</option>
+              <option value="monthly">Month</option>
+            </select>
+          </div>
+          {getCurrentPatterns().length > 0 ? (
             <div className="space-y-3">
-              {report.patterns.map((pattern, index) => (
+              {getCurrentPatterns().map((pattern, index) => (
                 <div
                   key={index}
                   className={`p-3 rounded-lg border ${getPatternColor(pattern.type)}`}
@@ -166,7 +197,7 @@ export default function AnalysisReport({ report }: AnalysisReportProps) {
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 dark:text-gray-400">No significant patterns detected</p>
+            <p className="text-gray-500 dark:text-gray-400">No significant patterns detected for {getTimeframeLabel(selectedTimeframe).toLowerCase()} timeframe</p>
           )}
         </div>
       </div>
