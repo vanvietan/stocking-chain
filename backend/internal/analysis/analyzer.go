@@ -24,6 +24,7 @@ func (a *Analyzer) Analyze(symbol string, data []models.StockData) (*models.Anal
 	patterns := DetectAllTimeframePatterns(data)
 	supportResistance := DetectSupportResistance(data)
 	trend := AnalyzeTrend(data)
+	wyckoff := AnalyzeWyckoff(data)
 
 	recommendation, score := a.generateRecommendation(
 		currentPrice,
@@ -31,6 +32,7 @@ func (a *Analyzer) Analyze(symbol string, data []models.StockData) (*models.Anal
 		patterns,
 		supportResistance,
 		trend,
+		wyckoff,
 	)
 
 	buyRange, halfBuyRange, sellRange := a.calculatePriceRanges(
@@ -48,6 +50,7 @@ func (a *Analyzer) Analyze(symbol string, data []models.StockData) (*models.Anal
 		Patterns:            patterns,
 		SupportResistance:   supportResistance,
 		Trend:               trend,
+		Wyckoff:             wyckoff,
 		BuyRange:            buyRange,
 		HalfBuyRange:        halfBuyRange,
 		SellRange:           sellRange,
@@ -63,6 +66,7 @@ func (a *Analyzer) generateRecommendation(
 	patterns models.TimeframePatterns,
 	sr models.SupportResistance,
 	trend models.TrendAnalysis,
+	wyckoff models.WyckoffAnalysis,
 ) (string, float64) {
 	score := 0.0
 
@@ -122,6 +126,45 @@ func (a *Analyzer) generateRecommendation(
 		distanceToResistance := (nearestResistance - currentPrice) / currentPrice
 		if distanceToResistance < 0.02 {
 			score -= 1.0
+		}
+	}
+
+	// Wyckoff phase scoring (reduced weights to avoid dominating other signals)
+	switch wyckoff.Phase {
+	case "accumulation":
+		// Accumulation phase is bullish - smart money buying
+		score += 1.0 * wyckoff.PhaseConfidence
+	case "markup":
+		// Markup phase - trend is up
+		score += 0.75 * wyckoff.PhaseConfidence
+	case "distribution":
+		// Distribution phase is bearish - smart money selling
+		score -= 1.0 * wyckoff.PhaseConfidence
+	case "markdown":
+		// Markdown phase - trend is down
+		score -= 0.75 * wyckoff.PhaseConfidence
+	}
+
+	// Wyckoff events scoring (reduced weights)
+	for _, event := range wyckoff.Events {
+		switch event.Name {
+		case "Spring", "Sign of Strength", "Selling Climax":
+			// Bullish accumulation events
+			score += 0.75 * event.Confidence
+		case "Upthrust", "Sign of Weakness", "Buying Climax":
+			// Bearish distribution events
+			score -= 0.75 * event.Confidence
+		}
+	}
+
+	// Effort vs Result divergence
+	if wyckoff.EffortResult == "diverging" {
+		// Divergence suggests potential reversal
+		// Reduce confidence in current trend
+		if trend.Trend == "uptrend" {
+			score -= 0.25
+		} else if trend.Trend == "downtrend" {
+			score += 0.25
 		}
 	}
 
