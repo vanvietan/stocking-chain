@@ -4,7 +4,7 @@ A full-stack web application for analyzing Vietnamese stock market data with adv
 
 ## Features
 
-- **Real-time Stock Data**: Fetches data from VNDIRECT API
+- **Real-time Stock Data**: Fetches data from Yahoo Finance API
 - **Technical Indicators**: RSI, MACD, Moving Averages (SMA/EMA), Bollinger Bands
 - **Candlestick Patterns**: Detects patterns like Doji, Hammer, Engulfing, Morning/Evening Star
 - **Support & Resistance**: Identifies key price levels
@@ -16,7 +16,7 @@ A full-stack web application for analyzing Vietnamese stock market data with adv
 
 ### Backend
 - **Go (Golang)**: High-performance backend
-- **VNDIRECT API**: Stock market data source (public API, no authentication required)
+- **Yahoo Finance API**: Stock market data source (public API, no authentication required)
 - **REST API**: Clean API architecture
 
 ### Frontend
@@ -35,7 +35,7 @@ stocking-chain/
 │   │   ├── analysis/        # Technical analysis algorithms
 │   │   ├── api/            # HTTP handlers
 │   │   └── models/         # Data models
-│   └── pkg/ssi/            # SSI API client
+│   └── pkg/ssi/            # Yahoo Finance API client
 └── frontend/
     ├── app/                # Next.js app router pages
     ├── components/         # React components
@@ -57,25 +57,18 @@ stocking-chain/
 cd backend
 ```
 
-2. Copy the environment file:
+2. (Optional) Configure environment variables:
 ```bash
-cp .env.example .env
+# Set custom port (default: 8080)
+export PORT=8080
 ```
 
-3. (Optional) Configure environment variables in `.env`:
-```
-# VNDIRECT public API doesn't require authentication
-# But you can add API key if you have one
-VNDIRECT_API_KEY=
-PORT=8080
-```
-
-4. Install dependencies:
+3. Install dependencies:
 ```bash
 go mod tidy
 ```
 
-5. Run the server:
+4. Run the server:
 ```bash
 go run cmd/server/main.go
 ```
@@ -105,6 +98,7 @@ The frontend will start on `http://localhost:3000`
 
 1. Open your browser and navigate to `http://localhost:3000`
 2. Enter a Vietnamese stock symbol (e.g., VNM, VIC, HPG) or click on a popular stock
+   - Note: The `.VN` suffix is automatically added for Yahoo Finance
 3. Click "Analyze" to get comprehensive analysis
 4. View the results including:
    - Buy/Sell recommendation

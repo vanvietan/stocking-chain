@@ -11,15 +11,14 @@ import (
 )
 
 func main() {
-	apiKey := os.Getenv("VNDIRECT_API_KEY")
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
-	vndirectClient := ssi.NewClient(apiKey)
+	yahooClient := ssi.NewClient("")
 	analyzer := analysis.NewAnalyzer()
-	handler := api.NewHandler(vndirectClient, analyzer)
+	handler := api.NewHandler(yahooClient, analyzer)
 
 	server := &http.Server{
 		Addr:    ":" + port,
@@ -27,7 +26,8 @@ func main() {
 	}
 
 	log.Printf("Starting server on port %s...", port)
-	log.Printf("Using VNDIRECT API for stock data")
+	log.Printf("Using Yahoo Finance API for stock data")
+	log.Printf("Vietnamese stocks will automatically use .VN suffix")
 	log.Printf("API endpoints:")
 	log.Printf("  - POST /api/analyze - Analyze a stock")
 	log.Printf("  - GET  /api/price?symbol=XXX - Get latest price")
