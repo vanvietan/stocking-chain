@@ -1,6 +1,7 @@
 'use client';
 
 import { AnalysisReport as ReportType } from '@/types';
+import StockChart from './StockChart';
 
 interface AnalysisReportProps {
   report: ReportType;
@@ -46,10 +47,22 @@ export default function AnalysisReport({ report }: AnalysisReportProps) {
 
   return (
     <div className="max-w-6xl mx-auto mt-8 space-y-6">
+      {/* Stock Price Chart */}
+      {report.price_history && report.price_history.length > 0 && (
+        <StockChart
+          priceHistory={report.price_history}
+          indicators={report.indicators}
+          supportResistance={report.support_resistance}
+          symbol={report.symbol}
+          companyName={report.company_name}
+        />
+      )}
+
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
         <div className="flex justify-between items-start mb-6">
           <div>
             <h2 className="text-3xl font-bold text-gray-800 dark:text-white">{report.symbol}</h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300">{report.company_name}</p>
             <p className="text-gray-500 dark:text-gray-400">Current Price: {formatPrice(report.current_price)} VND</p>
           </div>
           <div className={`px-6 py-3 rounded-lg border-2 ${getRecommendationColor(report.recommendation)}`}>

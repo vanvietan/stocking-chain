@@ -1,3 +1,14 @@
+export interface StockData {
+  symbol: string;
+  date: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  adj_close: number;
+}
+
 export interface TechnicalIndicators {
   rsi: number;
   macd: number;
@@ -37,6 +48,7 @@ export interface PriceRange {
 
 export interface AnalysisReport {
   symbol: string;
+  company_name: string;
   date: string;
   current_price: number;
   indicators: TechnicalIndicators;
@@ -48,4 +60,5 @@ export interface AnalysisReport {
   sell_range: PriceRange;
   recommendation: 'buy' | 'sell' | 'hold';
   recommendation_score: number;
+  price_history: StockData[];
 }

@@ -2,8 +2,8 @@ package analysis
 
 import (
 	"math"
-	"time"
 	"stocking-chain/internal/models"
+	"time"
 )
 
 type Analyzer struct{}
@@ -53,6 +53,7 @@ func (a *Analyzer) Analyze(symbol string, data []models.StockData) (*models.Anal
 		SellRange:           sellRange,
 		Recommendation:      recommendation,
 		RecommendationScore: score,
+		PriceHistory:        data,
 	}, nil
 }
 
