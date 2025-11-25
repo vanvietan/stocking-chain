@@ -18,6 +18,12 @@ func AnalyzeWyckoff(data []models.StockData) models.WyckoffAnalysis {
 			Events:          []models.WyckoffEvent{},
 			TradingRange:    models.PriceRange{},
 			EffortResult:    "unknown",
+			Recommendation:  "hold",
+			RecommendationScore: 0,
+			BuyZone:         models.PriceRange{},
+			AccumulationZone: models.PriceRange{},
+			DistributionZone: models.PriceRange{},
+			SellZone:        models.PriceRange{},
 		}
 	}
 
@@ -33,12 +39,36 @@ func AnalyzeWyckoff(data []models.StockData) models.WyckoffAnalysis {
 	// Analyze effort vs result (volume vs price movement)
 	effortResult := analyzeEffortVsResult(data)
 
+	// Generate Wyckoff-specific recommendation
+	recommendation, recommendationScore := generateWyckoffRecommendation(
+		data,
+		phase,
+		phaseConfidence,
+		events,
+		tradingRange,
+		effortResult,
+	)
+
+	// Calculate trading zones
+	buyZone, accumZone, distZone, sellZone := calculateWyckoffZones(
+		data,
+		tradingRange,
+		events,
+		phase,
+	)
+
 	return models.WyckoffAnalysis{
-		Phase:           phase,
-		PhaseConfidence: phaseConfidence,
-		Events:          events,
-		TradingRange:    tradingRange,
-		EffortResult:    effortResult,
+		Phase:              phase,
+		PhaseConfidence:    phaseConfidence,
+		Events:             events,
+		TradingRange:       tradingRange,
+		EffortResult:       effortResult,
+		Recommendation:     recommendation,
+		RecommendationScore: recommendationScore,
+		BuyZone:            buyZone,
+		AccumulationZone:   accumZone,
+		DistributionZone:   distZone,
+		SellZone:           sellZone,
 	}
 }
 
@@ -643,5 +673,194 @@ func calculateConfidence(volumeRatio, rangeRatio, baseConfidence float64) float6
 	}
 
 	return math.Min(baseConfidence+boost, 0.95)
+}
+
+// ============================================================================
+// WYCKOFF RECOMMENDATION
+// ============================================================================
+
+// generateWyckoffRecommendation calculates buy/sell/hold recommendation based purely on Wyckoff signals
+func generateWyckoffRecommendation(
+	data []models.StockData,
+	phase string,
+	phaseConfidence float64,
+	events []models.WyckoffEvent,
+	tradingRange models.PriceRange,
+	effortResult string,
+) (string, float64) {
+	if len(data) == 0 || phase == "insufficient_data" || phase == "unknown" {
+		return "hold", 0
+	}
+
+	currentPrice := data[len(data)-1].Close
+	score := 0.0
+
+	// 1. Phase Scoring (primary signal, weight: 3.0)
+	switch phase {
+	case "accumulation":
+		score += 3.0 * phaseConfidence
+	case "markup":
+		score += 1.5 * phaseConfidence
+	case "distribution":
+		score -= 3.0 * phaseConfidence
+	case "markdown":
+		score -= 1.5 * phaseConfidence
+	}
+
+	// 2. Trading Range Position (secondary signal, weight: 2.0)
+	rangeSize := tradingRange.Max - tradingRange.Min
+	if rangeSize > 0 {
+		pricePosition := (currentPrice - tradingRange.Min) / rangeSize
+
+		if pricePosition < 0.3 {
+			// Price in lower 30% of range - accumulation zone
+			score += 2.0
+		} else if pricePosition > 0.7 {
+			// Price in upper 30% of range - distribution zone
+			score -= 2.0
+		}
+		// Middle 40% contributes 0
+	}
+
+	// 3. Recent Events (tertiary signal, look back 10 bars)
+	recentThreshold := 10
+	if len(data) >= recentThreshold {
+		recentDate := data[len(data)-recentThreshold].Date
+
+		for _, event := range events {
+			if event.Date.After(recentDate) || event.Date.Equal(recentDate) {
+				switch event.Name {
+				case "Spring":
+					score += 2.5 * event.Confidence
+				case "Sign of Strength":
+					score += 2.0 * event.Confidence
+				case "Selling Climax":
+					score += 1.5 * event.Confidence
+				case "Upthrust":
+					score -= 2.5 * event.Confidence
+				case "Sign of Weakness":
+					score -= 2.0 * event.Confidence
+				case "Buying Climax":
+					score -= 1.5 * event.Confidence
+				}
+			}
+		}
+	}
+
+	// 4. Effort vs Result (confirming/diverging)
+	if effortResult == "diverging" {
+		// Determine trend from recent price action
+		if len(data) >= 10 {
+			recentStart := data[len(data)-10].Close
+			recentEnd := currentPrice
+			isUptrending := recentEnd > recentStart
+
+			if isUptrending {
+				// Diverging in uptrend = reversal warning
+				score -= 1.5
+			} else {
+				// Diverging in downtrend = reversal opportunity
+				score += 1.5
+			}
+		}
+	} else if effortResult == "confirming" {
+		// Trend is healthy
+		score += 0.5
+	}
+
+	// Normalize score to [-1, 1]
+	// Max possible score: ~3.0 + 2.0 + 2.5 + 1.5 = 9.0
+	// Min possible score: ~-3.0 + -2.0 + -2.5 + -1.5 = -9.0
+	normalizedScore := math.Max(-1, math.Min(1, score/9.0))
+
+	// Determine recommendation
+	recommendation := "hold"
+	if normalizedScore > 0.4 {
+		recommendation = "buy"
+	} else if normalizedScore < -0.4 {
+		recommendation = "sell"
+	}
+
+	return recommendation, normalizedScore
+}
+
+// ============================================================================
+// WYCKOFF TRADING ZONES
+// ============================================================================
+
+// calculateWyckoffZones determines buy/accumulation/distribution/sell zones based on trading range and events
+func calculateWyckoffZones(
+	data []models.StockData,
+	tradingRange models.PriceRange,
+	events []models.WyckoffEvent,
+	phase string,
+) (buyZone, accumZone, distZone, sellZone models.PriceRange) {
+	rangeSize := tradingRange.Max - tradingRange.Min
+
+	// Default zone calculations based on trading range
+	// Buy Zone: Bottom 15% of range + 3% buffer below for Springs
+	buyZone = models.PriceRange{
+		Min: tradingRange.Min - (rangeSize * 0.03),
+		Max: tradingRange.Min + (rangeSize * 0.15),
+	}
+
+	// Accumulation Zone: 15-35% of range
+	accumZone = models.PriceRange{
+		Min: tradingRange.Min + (rangeSize * 0.15),
+		Max: tradingRange.Min + (rangeSize * 0.35),
+	}
+
+	// Distribution Zone: 65-85% of range
+	distZone = models.PriceRange{
+		Min: tradingRange.Max - (rangeSize * 0.35),
+		Max: tradingRange.Max - (rangeSize * 0.15),
+	}
+
+	// Sell Zone: Top 15% of range + 3% buffer above for Upthrusts
+	sellZone = models.PriceRange{
+		Min: tradingRange.Max - (rangeSize * 0.15),
+		Max: tradingRange.Max + (rangeSize * 0.03),
+	}
+
+	// Event-based adjustments (look back 10 bars for recent events)
+	if len(data) >= 10 {
+		recentDate := data[len(data)-10].Date
+
+		for _, event := range events {
+			if event.Date.After(recentDate) || event.Date.Equal(recentDate) {
+				switch event.Name {
+				case "Spring":
+					// Spring: False breakdown below support
+					// Shift buy zone lower bound to capture Spring entry
+					springLow := event.Price * 0.98 // 2% below Spring price
+					if springLow < buyZone.Min {
+						buyZone.Min = springLow
+					}
+
+				case "Upthrust":
+					// Upthrust: False breakout above resistance
+					// Shift sell zone upper bound to capture Upthrust exit
+					upthrustHigh := event.Price * 1.02 // 2% above Upthrust price
+					if upthrustHigh > sellZone.Max {
+						sellZone.Max = upthrustHigh
+					}
+
+				case "Selling Climax":
+					// Selling Climax: Panic selling exhaustion
+					// Expand buy zone by 10% (stronger buy opportunity)
+					expansion := rangeSize * 0.10
+					buyZone.Max = buyZone.Max + expansion
+
+				case "Buying Climax":
+					// Buying Climax: Euphoric buying exhaustion
+					// Expand sell zone by 10% (stronger sell opportunity)
+					expansion := rangeSize * 0.10
+					sellZone.Min = sellZone.Min - expansion
+				}
+			}
+		}
+	}
+
+	return buyZone, accumZone, distZone, sellZone
 }
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import axios from 'axios';
+import Navigation from '@/components/Navigation';
 import StockInput from '@/components/StockInput';
 import AnalysisReport from '@/components/AnalysisReport';
 import { AnalysisReport as AnalysisReportType } from '@/types';
@@ -33,6 +34,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      <Navigation currentSymbol={report?.symbol} activePage="overview" />
+
       <div className="container mx-auto px-4 py-8">
         <header className="text-center mb-12">
           <h1 className="text-5xl font-bold text-gray-800 dark:text-white mb-4">

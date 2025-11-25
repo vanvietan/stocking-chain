@@ -52,6 +52,31 @@ export interface PriceRange {
   max: number;
 }
 
+export interface WyckoffEvent {
+  name: string;
+  type: string;
+  date: string;
+  price: number;
+  volume: number;
+  confidence: number;
+}
+
+export interface WyckoffAnalysis {
+  phase: 'accumulation' | 'distribution' | 'markup' | 'markdown' | 'unknown' | 'insufficient_data';
+  phase_confidence: number;
+  events: WyckoffEvent[];
+  trading_range: PriceRange;
+  effort_result: 'confirming' | 'diverging' | 'unknown';
+
+  // Wyckoff-specific recommendation and trading zones
+  recommendation: 'buy' | 'sell' | 'hold';
+  recommendation_score: number;
+  buy_zone: PriceRange;
+  accumulation_zone: PriceRange;
+  distribution_zone: PriceRange;
+  sell_zone: PriceRange;
+}
+
 export interface AnalysisReport {
   symbol: string;
   company_name: string;
@@ -61,6 +86,7 @@ export interface AnalysisReport {
   patterns: TimeframePatterns;
   support_resistance: SupportResistance;
   trend: TrendAnalysis;
+  wyckoff: WyckoffAnalysis;
   buy_range: PriceRange;
   half_buy_range: PriceRange;
   sell_range: PriceRange;

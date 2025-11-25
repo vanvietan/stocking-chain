@@ -91,4 +91,12 @@ type WyckoffAnalysis struct {
 	Events          []WyckoffEvent `json:"events"`
 	TradingRange    PriceRange     `json:"trading_range"`
 	EffortResult    string         `json:"effort_result"` // "confirming", "diverging"
+
+	// Wyckoff-specific recommendation and trading zones
+	Recommendation      string     `json:"recommendation"`       // "buy", "sell", "hold"
+	RecommendationScore float64    `json:"recommendation_score"` // -1 to 1
+	BuyZone             PriceRange `json:"buy_zone"`             // Aggressive entry zone (bottom 15% of range)
+	AccumulationZone    PriceRange `json:"accumulation_zone"`    // Moderate entry zone (15-35% of range)
+	DistributionZone    PriceRange `json:"distribution_zone"`    // Take profit zone (65-85% of range)
+	SellZone            PriceRange `json:"sell_zone"`            // Exit/short zone (top 15% of range)
 }
