@@ -798,27 +798,28 @@ func calculateWyckoffZones(
 	rangeSize := tradingRange.Max - tradingRange.Min
 
 	// Default zone calculations based on trading range
-	// Buy Zone: Bottom 15% of range + 3% buffer below for Springs
+	// Buy Zone: Bottom 20% of range + 3% buffer below for Springs
+	// (20% provides better fill probability while still respecting Wyckoff's "buy in lower third" principle)
 	buyZone = models.PriceRange{
 		Min: tradingRange.Min - (rangeSize * 0.03),
-		Max: tradingRange.Min + (rangeSize * 0.15),
+		Max: tradingRange.Min + (rangeSize * 0.20),
 	}
 
-	// Accumulation Zone: 15-35% of range
+	// Accumulation Zone: 20-40% of range
 	accumZone = models.PriceRange{
-		Min: tradingRange.Min + (rangeSize * 0.15),
-		Max: tradingRange.Min + (rangeSize * 0.35),
+		Min: tradingRange.Min + (rangeSize * 0.20),
+		Max: tradingRange.Min + (rangeSize * 0.40),
 	}
 
-	// Distribution Zone: 65-85% of range
+	// Distribution Zone: 60-80% of range
 	distZone = models.PriceRange{
-		Min: tradingRange.Max - (rangeSize * 0.35),
-		Max: tradingRange.Max - (rangeSize * 0.15),
+		Min: tradingRange.Max - (rangeSize * 0.40),
+		Max: tradingRange.Max - (rangeSize * 0.20),
 	}
 
-	// Sell Zone: Top 15% of range + 3% buffer above for Upthrusts
+	// Sell Zone: Top 20% of range + 3% buffer above for Upthrusts
 	sellZone = models.PriceRange{
-		Min: tradingRange.Max - (rangeSize * 0.15),
+		Min: tradingRange.Max - (rangeSize * 0.20),
 		Max: tradingRange.Max + (rangeSize * 0.03),
 	}
 
