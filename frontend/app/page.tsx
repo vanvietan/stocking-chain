@@ -7,6 +7,8 @@ import StockInput from '@/components/StockInput';
 import AnalysisReport from '@/components/AnalysisReport';
 import { AnalysisReport as AnalysisReportType } from '@/types';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+
 export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +20,7 @@ export default function Home() {
     setReport(null);
 
     try {
-      const response = await axios.post('http://localhost:8080/api/analyze', {
+      const response = await axios.post(`${API_URL}/api/analyze`, {
         symbol: symbol.toUpperCase(),
         days_back: 365,
       });

@@ -5,6 +5,7 @@ import {
   ComposedChart,
   Line,
   Bar,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -234,8 +235,8 @@ export default function EffortResultChart({ priceHistory, effortResult }: Effort
               name="Volume (Effort)"
             >
               {chartData.map((entry, index) => (
-                <Bar
-                  key={`bar-${index}`}
+                <Cell
+                  key={`cell-${index}`}
                   fill={entry.isDiverging ? '#f97316' : '#6366f1'}
                 />
               ))}

@@ -1,0 +1,30 @@
+services:
+  # Go Backend
+  - type: web
+    name: stocking-chain-api
+    runtime: go
+    rootDir: backend
+    buildCommand: go build -o bin/server ./cmd/server
+    startCommand: ./bin/server
+    envVars:
+      - key: PORT
+        value: 10000
+    plan: free
+
+  # Next.js Frontend
+  - type: web
+    name: stocking-chain-web
+    runtime: node
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          name: stocking-chain-api
+          type: web
+          property: host
+    plan: free
+
