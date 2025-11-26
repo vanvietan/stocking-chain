@@ -18,7 +18,8 @@ export default function Home() {
     setReport(null);
 
     try {
-      const response = await axios.post('http://localhost:8080/api/analyze', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const response = await axios.post(`${apiUrl}/api/analyze`, {
         symbol: symbol.toUpperCase(),
         days_back: 365,
       });
