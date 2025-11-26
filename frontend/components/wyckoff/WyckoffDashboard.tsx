@@ -10,7 +10,17 @@ import EffortResultChart from './EffortResultChart';
 import TradingRangeCard from './TradingRangeCard';
 import EventsTimeline from './EventsTimeline';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+const getApiUrl = () => {
+  const url = process.env.NEXT_PUBLIC_API_URL;
+  if (!url) return 'http://localhost:8080';
+  // Add https:// if no protocol specified (Render's host property doesn't include protocol)
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return `https://${url}`;
+  }
+  return url;
+};
+
+const API_URL = getApiUrl();
 
 interface WyckoffDashboardProps {
   symbol: string;
