@@ -2,6 +2,8 @@
 
 A full-stack web application for analyzing Vietnamese stock market data with advanced technical analysis, including technical indicators, candlestick patterns, support/resistance levels, and trend analysis.
 
+https://stocking-chain-web.onrender.com/
+
 ## Features
 
 - **Real-time Stock Data**: Fetches data from Yahoo Finance API
