@@ -22,9 +22,6 @@ services:
       - key: PORT
         value: 10000
       - key: NEXT_PUBLIC_API_URL
-        fromService:
-          name: stocking-chain-api
-          type: web
-          property: host
+        value: https://stocking-chain-api.onrender.com
     plan: free
 
