@@ -23,7 +23,7 @@ function WyckoffContent() {
                 Wyckoff Method Analysis
               </h1>
               <p className="text-gray-400 text-lg">
-                Advanced market analysis based on Richard Wyckoff's methodology
+                Advanced market analysis based on Richard Wyckoff&apos;s methodology
               </p>
             </div>
 

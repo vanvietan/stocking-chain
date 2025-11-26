@@ -391,7 +391,7 @@ export default function StockChart({
                 fill="transparent"
                 shape={(props: any) => {
                   const { x, width, payload } = props;
-                  if (!payload) return null;
+                  if (!payload) return <g />;
                   
                   const yScale = (val: number) => {
                     const range = priceRange.max - priceRange.min;

@@ -10,6 +10,8 @@ import EffortResultChart from './EffortResultChart';
 import TradingRangeCard from './TradingRangeCard';
 import EventsTimeline from './EventsTimeline';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+
 interface WyckoffDashboardProps {
   symbol: string;
 }
@@ -25,7 +27,7 @@ export default function WyckoffDashboard({ symbol }: WyckoffDashboardProps) {
       setError(null);
 
       try {
-        const response = await axios.post('http://localhost:8080/api/analyze', {
+        const response = await axios.post(`${API_URL}/api/analyze`, {
           symbol: symbol.toUpperCase(),
           days_back: 365,
         });
