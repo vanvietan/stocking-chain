@@ -1,17 +1,20 @@
-# Vietnamese Stock Market Analyzer
+# Market Analyzer - Vietnamese Stocks & Cryptocurrencies
 
-A full-stack web application for analyzing Vietnamese stock market data with advanced technical analysis, including technical indicators, candlestick patterns, support/resistance levels, and trend analysis.
+A full-stack web application for analyzing Vietnamese stocks and cryptocurrency markets with advanced technical analysis, including technical indicators, candlestick patterns, support/resistance levels, and trend analysis.
 
 https://stocking-chain-web.onrender.com/
 
 ## Features
 
-- **Real-time Stock Data**: Fetches data from Yahoo Finance API
+- **Multi-Market Support**: Analyze Vietnamese stocks and cryptocurrencies
+- **Real-time Market Data**: Fetches data from Yahoo Finance API
 - **Technical Indicators**: RSI, MACD, Moving Averages (SMA/EMA), Bollinger Bands
 - **Candlestick Patterns**: Detects patterns like Doji, Hammer, Engulfing, Morning/Evening Star
 - **Support & Resistance**: Identifies key price levels
 - **Trend Analysis**: Analyzes market trends with strength indicators
 - **Buy/Sell Recommendations**: AI-powered recommendations with buy ranges and sell targets
+- **Market Selector**: Easy-to-use tabs for switching between Vietnamese stocks and cryptocurrencies
+- **Currency Display**: Shows prices in appropriate currency (VND for Vietnamese stocks, USD for crypto)
 - **Modern UI**: Responsive Next.js frontend with real-time analysis display
 
 ## Tech Stack
@@ -113,14 +116,24 @@ The frontend will start on `http://localhost:3000`
 ## API Endpoints
 
 - `GET /api/health` - Health check
-- `POST /api/analyze` - Analyze a stock
+- `POST /api/analyze` - Analyze a stock or cryptocurrency
   ```json
   {
     "symbol": "VNM",
+    "market_type": "vietnamese",
     "days_back": 200
   }
   ```
-- `GET /api/price?symbol=VNM` - Get latest price for a symbol
+  Or for crypto:
+  ```json
+  {
+    "symbol": "BTC",
+    "market_type": "crypto",
+    "days_back": 200
+  }
+  ```
+  - `market_type`: "vietnamese" (default) or "crypto"
+- `GET /api/price?symbol=VNM&market_type=vietnamese` - Get latest price for a stock or crypto
 
 ## Technical Analysis Details
 

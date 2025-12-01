@@ -5,7 +5,7 @@ import axios from 'axios';
 import Navigation from '@/components/Navigation';
 import StockInput from '@/components/StockInput';
 import AnalysisReport from '@/components/AnalysisReport';
-import { AnalysisReport as AnalysisReportType } from '@/types';
+import { AnalysisReport as AnalysisReportType, MarketType } from '@/types';
 
 const getApiUrl = () => {
   const url = process.env.NEXT_PUBLIC_API_URL;
@@ -24,7 +24,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<AnalysisReportType | null>(null);
 
-  const handleAnalyze = async (symbol: string) => {
+  const handleAnalyze = async (symbol: string, marketType: MarketType) => {
     setLoading(true);
     setError(null);
     setReport(null);
@@ -32,12 +32,13 @@ export default function Home() {
     try {
       const response = await axios.post(`${API_URL}/api/analyze`, {
         symbol: symbol.toUpperCase(),
+        market_type: marketType,
         days_back: 365,
       });
 
       setReport(response.data);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to analyze stock. Please try again.');
+      setError(err.response?.data?.error || 'Failed to analyze. Please try again.');
       console.error('Analysis error:', err);
     } finally {
       setLoading(false);
@@ -51,10 +52,10 @@ export default function Home() {
       <div className="container mx-auto px-4 py-8">
         <header className="text-center mb-12">
           <h1 className="text-5xl font-bold text-gray-800 dark:text-white mb-4">
-            Vietnamese Stock Market Analyzer
+            Market Analyzer
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300">
-            Advanced technical analysis with AI-powered recommendations
+            Advanced technical analysis for Vietnamese stocks and cryptocurrencies
           </p>
         </header>
 

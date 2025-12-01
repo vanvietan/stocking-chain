@@ -80,6 +80,9 @@ export interface WyckoffAnalysis {
 export interface AnalysisReport {
   symbol: string;
   company_name: string;
+  currency: string;        // "VND", "USD", etc.
+  exchange: string;        // "HNM", "HSM", "CCC", etc.
+  market_type: string;     // "vietnamese", "crypto"
   date: string;
   current_price: number;
   indicators: TechnicalIndicators;
@@ -94,3 +97,18 @@ export interface AnalysisReport {
   recommendation_score: number;
   price_history: StockData[];
 }
+
+export type MarketType = 'vietnamese' | 'crypto';
+
+export const MARKET_CONFIG = {
+  vietnamese: {
+    label: 'Vietnamese Stocks',
+    popularSymbols: ['VNM', 'VIC', 'VHM', 'HPG', 'FPT', 'MSN', 'TCB', 'VCB', 'MBB', 'ACB'],
+    placeholder: 'e.g., VNM, VIC, HPG...',
+  },
+  crypto: {
+    label: 'Cryptocurrencies',
+    popularSymbols: ['BTC', 'ETH', 'BNB', 'SOL', 'XRP', 'ADA', 'DOGE', 'MATIC', 'DOT', 'AVAX'],
+    placeholder: 'e.g., BTC, ETH, SOL...',
+  }
+} as const;

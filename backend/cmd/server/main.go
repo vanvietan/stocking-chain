@@ -27,10 +27,10 @@ func main() {
 
 	log.Printf("Starting server on port %s...", port)
 	log.Printf("Using Yahoo Finance API for stock data")
-	log.Printf("Vietnamese stocks will automatically use .VN suffix")
+	log.Printf("Multi-market support: Vietnamese stocks (.VN) and Cryptocurrencies (-USD)")
 	log.Printf("API endpoints:")
-	log.Printf("  - POST /api/analyze - Analyze a stock")
-	log.Printf("  - GET  /api/price?symbol=XXX - Get latest price")
+	log.Printf("  - POST /api/analyze - Analyze a stock or crypto (supports market_type: 'vietnamese' or 'crypto')")
+	log.Printf("  - GET  /api/price?symbol=XXX&market_type=crypto - Get latest price")
 	log.Printf("  - GET  /api/health - Health check")
 
 	if err := server.ListenAndServe(); err != nil {

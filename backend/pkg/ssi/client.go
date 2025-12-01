@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -101,18 +102,38 @@ func NewClient(apiKey string) *Client {
 	}
 }
 
-// formatSymbol adds .VN suffix for Vietnamese stocks if not already present
-func formatSymbol(symbol string) string {
+// formatSymbol adds appropriate suffix based on market type
+// Vietnamese stocks: .VN (e.g., VNM.VN)
+// Cryptocurrencies: -USD (e.g., BTC-USD)
+func formatSymbol(symbol string, marketType string) string {
 	symbol = strings.ToUpper(strings.TrimSpace(symbol))
-	if !strings.HasSuffix(symbol, ".VN") {
-		return symbol + ".VN"
+
+	switch marketType {
+	case "crypto":
+		// Crypto: add -USD suffix if not already present
+		if !strings.Contains(symbol, "-") {
+			return symbol + "-USD"
+		}
+		return symbol
+	case "vietnamese":
+		// Vietnamese: add .VN suffix if not already present
+		if !strings.Contains(symbol, ".") {
+			return symbol + ".VN"
+		}
+		return symbol
+	default:
+		// Default to Vietnamese for backward compatibility
+		if !strings.Contains(symbol, ".") {
+			return symbol + ".VN"
+		}
+		return symbol
 	}
-	return symbol
 }
 
 // GetHistoricalData fetches historical stock data from Yahoo Finance
-func (c *Client) GetHistoricalData(symbol string, fromDate, toDate time.Time) ([]models.StockData, error) {
-	yahooSymbol := formatSymbol(symbol)
+func (c *Client) GetHistoricalData(symbol string, marketType string, fromDate, toDate time.Time) ([]models.StockData, error) {
+	yahooSymbol := formatSymbol(symbol, marketType)
+	log.Printf("Fetching data for %s (market: %s, Yahoo symbol: %s)", symbol, marketType, yahooSymbol)
 
 	// Yahoo Finance uses Unix timestamps
 	period1 := fromDate.Unix()
@@ -156,6 +177,10 @@ func (c *Client) GetHistoricalData(symbol string, fromDate, toDate time.Time) ([
 	}
 
 	if yahooResp.Chart.Error != nil {
+		// Provide more helpful error messages
+		if yahooResp.Chart.Error.Code == "Not Found" {
+			return nil, fmt.Errorf("symbol not found or may be delisted. Please verify the symbol is correct")
+		}
 		return nil, fmt.Errorf("Yahoo Finance API error: %s - %s", yahooResp.Chart.Error.Code, yahooResp.Chart.Error.Description)
 	}
 
@@ -212,11 +237,11 @@ func (c *Client) GetHistoricalData(symbol string, fromDate, toDate time.Time) ([
 }
 
 // GetLatestPrice fetches the latest price for a stock
-func (c *Client) GetLatestPrice(symbol string) (*models.StockData, error) {
+func (c *Client) GetLatestPrice(symbol string, marketType string) (*models.StockData, error) {
 	toDate := time.Now()
 	fromDate := toDate.AddDate(0, 0, -10) // Get last 10 days to ensure we get data
 
-	data, err := c.GetHistoricalData(symbol, fromDate, toDate)
+	data, err := c.GetHistoricalData(symbol, marketType, fromDate, toDate)
 	if err != nil {
 		return nil, err
 	}
@@ -230,8 +255,8 @@ func (c *Client) GetLatestPrice(symbol string) (*models.StockData, error) {
 }
 
 // GetStockInfo fetches company metadata including name from Yahoo Finance using search API
-func (c *Client) GetStockInfo(symbol string) (*StockInfo, error) {
-	yahooSymbol := formatSymbol(symbol)
+func (c *Client) GetStockInfo(symbol string, marketType string) (*StockInfo, error) {
+	yahooSymbol := formatSymbol(symbol, marketType)
 
 	// Use search API which is publicly accessible
 	url := fmt.Sprintf("%s/v1/finance/search?q=%s&quotesCount=1&newsCount=0",
@@ -286,11 +311,62 @@ func (c *Client) GetStockInfo(symbol string) (*StockInfo, error) {
 		result = &searchResp.Quotes[0]
 	}
 
+	// Get currency from chart API (search API doesn't provide it)
+	// Fetch just 1 day of data to get metadata
+	toDate := time.Now()
+	fromDate := toDate.AddDate(0, 0, -1)
+
+	chartURL := fmt.Sprintf("%s/v8/finance/chart/%s?period1=%d&period2=%d&interval=1d",
+		YAHOO_BASE_URL,
+		yahooSymbol,
+		fromDate.Unix(),
+		toDate.Unix(),
+	)
+
+	chartReq, err := http.NewRequest("GET", chartURL, nil)
+	if err != nil {
+		// If chart fetch fails, return without currency
+		return &StockInfo{
+			Symbol:    symbol,
+			ShortName: result.ShortName,
+			LongName:  result.LongName,
+			Exchange:  result.ExchangeDisp,
+			Currency:  "",
+		}, nil
+	}
+
+	chartReq.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+	chartReq.Header.Set("Accept", "application/json")
+
+	chartResp, err := c.httpClient.Do(chartReq)
+	if err == nil {
+		defer chartResp.Body.Close()
+		if chartResp.StatusCode == http.StatusOK {
+			chartBody, err := io.ReadAll(chartResp.Body)
+			if err == nil {
+				var yahooChartResp YahooChartResponse
+				if err := json.Unmarshal(chartBody, &yahooChartResp); err == nil {
+					if len(yahooChartResp.Chart.Result) > 0 {
+						meta := yahooChartResp.Chart.Result[0].Meta
+						return &StockInfo{
+							Symbol:    symbol,
+							ShortName: result.ShortName,
+							LongName:  result.LongName,
+							Exchange:  meta.ExchangeName,
+							Currency:  meta.Currency,
+						}, nil
+					}
+				}
+			}
+		}
+	}
+
+	// Fallback if chart API fails
 	return &StockInfo{
-		Symbol:    symbol, // Keep original symbol without .VN suffix
+		Symbol:    symbol,
 		ShortName: result.ShortName,
 		LongName:  result.LongName,
 		Exchange:  result.ExchangeDisp,
-		Currency:  "", // Search API doesn't return currency
+		Currency:  "",
 	}, nil
 }

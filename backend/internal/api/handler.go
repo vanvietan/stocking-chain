@@ -25,6 +25,7 @@ func NewHandler(ssiClient *ssi.Client, analyzer *analysis.Analyzer) *Handler {
 type AnalyzeRequest struct {
 	Symbol     string `json:"symbol"`
 	DaysBack   int    `json:"days_back,omitempty"`
+	MarketType string `json:"market_type,omitempty"` // "vietnamese" or "crypto"
 }
 
 type ErrorResponse struct {
@@ -48,6 +49,17 @@ func (h *Handler) AnalyzeStock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Default to Vietnamese for backward compatibility
+	if req.MarketType == "" {
+		req.MarketType = "vietnamese"
+	}
+
+	// Validate market type
+	if req.MarketType != "vietnamese" && req.MarketType != "crypto" {
+		respondWithError(w, http.StatusBadRequest, "market_type must be 'vietnamese' or 'crypto'")
+		return
+	}
+
 	if req.DaysBack == 0 {
 		req.DaysBack = 200
 	}
@@ -55,9 +67,9 @@ func (h *Handler) AnalyzeStock(w http.ResponseWriter, r *http.Request) {
 	toDate := time.Now()
 	fromDate := toDate.AddDate(0, 0, -req.DaysBack)
 
-	log.Printf("Fetching data for %s from %s to %s", req.Symbol, fromDate.Format("2006-01-02"), toDate.Format("2006-01-02"))
+	log.Printf("Fetching data for %s (%s market) from %s to %s", req.Symbol, req.MarketType, fromDate.Format("2006-01-02"), toDate.Format("2006-01-02"))
 
-	stockData, err := h.ssiClient.GetHistoricalData(req.Symbol, fromDate, toDate)
+	stockData, err := h.ssiClient.GetHistoricalData(req.Symbol, req.MarketType, fromDate, toDate)
 	if err != nil {
 		log.Printf("Error fetching stock data: %v", err)
 		respondWithError(w, http.StatusInternalServerError, "Failed to fetch stock data: "+err.Error())
@@ -79,13 +91,16 @@ func (h *Handler) AnalyzeStock(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch company info (non-blocking - continue even if it fails)
-	stockInfo, err := h.ssiClient.GetStockInfo(req.Symbol)
+	stockInfo, err := h.ssiClient.GetStockInfo(req.Symbol, req.MarketType)
 	if err != nil {
 		log.Printf("Warning: Could not fetch company info for %s: %v", req.Symbol, err)
 		// Use symbol as fallback for company name
 		report.CompanyName = req.Symbol
+		report.Currency = ""
+		report.Exchange = ""
 	} else {
-		log.Printf("Stock info for %s: LongName='%s', ShortName='%s'", req.Symbol, stockInfo.LongName, stockInfo.ShortName)
+		log.Printf("Stock info for %s: LongName='%s', ShortName='%s', Currency='%s', Exchange='%s'",
+			req.Symbol, stockInfo.LongName, stockInfo.ShortName, stockInfo.Currency, stockInfo.Exchange)
 		// Prefer long name, fall back to short name, then symbol
 		if stockInfo.LongName != "" {
 			report.CompanyName = stockInfo.LongName
@@ -94,7 +109,13 @@ func (h *Handler) AnalyzeStock(w http.ResponseWriter, r *http.Request) {
 		} else {
 			report.CompanyName = req.Symbol
 		}
+		// Set currency and exchange
+		report.Currency = stockInfo.Currency
+		report.Exchange = stockInfo.Exchange
 	}
+
+	// Set market type
+	report.MarketType = req.MarketType
 
 	respondWithJSON(w, http.StatusOK, report)
 }
@@ -111,7 +132,17 @@ func (h *Handler) GetStockPrice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	stockData, err := h.ssiClient.GetLatestPrice(symbol)
+	marketType := r.URL.Query().Get("market_type")
+	if marketType == "" {
+		marketType = "vietnamese" // Default for backward compatibility
+	}
+
+	if marketType != "vietnamese" && marketType != "crypto" {
+		respondWithError(w, http.StatusBadRequest, "market_type must be 'vietnamese' or 'crypto'")
+		return
+	}
+
+	stockData, err := h.ssiClient.GetLatestPrice(symbol, marketType)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Failed to fetch stock price")
 		return

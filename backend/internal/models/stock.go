@@ -54,6 +54,9 @@ type TrendAnalysis struct {
 type AnalysisReport struct {
 	Symbol              string              `json:"symbol"`
 	CompanyName         string              `json:"company_name"`
+	Currency            string              `json:"currency"`      // "VND", "USD", etc.
+	Exchange            string              `json:"exchange"`      // "HNM", "HSM", "CCC", etc.
+	MarketType          string              `json:"market_type"`   // "vietnamese", "crypto"
 	Date                time.Time           `json:"date"`
 	CurrentPrice        float64             `json:"current_price"`
 	Indicators          TechnicalIndicators `json:"indicators"`

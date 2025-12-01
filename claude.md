@@ -2,9 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-# Vietnamese Stock Market Analyzer
+# Market Analyzer - Vietnamese Stocks & Cryptocurrencies
 
-A full-stack web application for technical analysis of Vietnamese stocks using Yahoo Finance API with advanced technical indicators, candlestick patterns, support/resistance analysis, trend detection, and Wyckoff Method analysis.
+A full-stack web application for technical analysis of Vietnamese stocks and cryptocurrencies using Yahoo Finance API with advanced technical indicators, candlestick patterns, support/resistance analysis, trend detection, and Wyckoff Method analysis.
 
 ## Tech Stack
 
@@ -22,7 +22,9 @@ A full-stack web application for technical analysis of Vietnamese stocks using Y
 
 ### External API
 - **Yahoo Finance API**: `https://query1.finance.yahoo.com` (public, no authentication)
-- Vietnamese stocks use `.VN` suffix (automatically appended by backend in `pkg/ssi/client.go:formatSymbol`)
+- Vietnamese stocks use `.VN` suffix (e.g., VNM.VN, VIC.VN)
+- Cryptocurrencies use `-USD` suffix (e.g., BTC-USD, ETH-USD)
+- Suffix automatically appended by backend based on `market_type` parameter in `pkg/ssi/client.go:formatSymbol`
 
 ## Development Commands
 
